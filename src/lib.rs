@@ -1,5 +1,4 @@
-use std::fs;
-use zed_extension_api::{self as zed, ContextServerId, Project, Result};
+use zed_extension_api::{self as zed, LanguageServerId, Result};
 
 struct RealtimeStt;
 
@@ -8,39 +7,40 @@ impl zed::Extension for RealtimeStt {
         Self
     }
 
-    fn context_server_command(
+    fn language_server_command(
         &mut self,
-        _context_server_id: &ContextServerId,
-        _project: &Project,
+        _language_server_id: &LanguageServerId,
+        worktree: &zed::Worktree,
     ) -> Result<zed::Command> {
-        let ext_dir = std::env::current_dir()
-            .map_err(|e| format!("failed to get extension dir: {e}"))?;
+        // current_dir = .../extensions/work/realtime-stt  (пустой, WASM sandbox)
+        // симлинк с файлами лежит на .../extensions/realtime-stt → наш проект
+        let work_dir = std::env::current_dir()
+            .map_err(|e| format!("current_dir error: {e}"))?;
 
-        let setup = ext_dir.join("server/setup.sh");
+        // поднимаемся из work/realtime-stt в extensions/
+        let ext_id = work_dir
+            .file_name()
+            .ok_or("cannot get extension id from work dir")?
+            .to_string_lossy()
+            .into_owned();
 
-        if !fs::metadata(&setup).is_ok() {
-            return Err(format!(
-                "server/setup.sh not found in extension dir: {}",
-                ext_dir.display()
-            ));
-        }
+        let extensions_dir = work_dir
+            .parent() // .../extensions/work
+            .and_then(|p| p.parent()) // .../extensions
+            .ok_or("cannot navigate to extensions dir")?;
 
-        println!("[realtime-stt] starting STT server from {}", ext_dir.display());
+        // .../extensions/installed/realtime-stt — там реальные файлы
+        let ext_files_dir = extensions_dir.join("installed").join(&ext_id);
+        let launcher = ext_files_dir.join("launcher.sh");
+
+        let bash = worktree.which("bash").ok_or("bash not found in PATH")?;
+
+        println!("[realtime-stt] launching via {}", launcher.display());
 
         Ok(zed::Command {
-            command: setup.to_string_lossy().into_owned(),
-            args: vec![],
-            env: vec![
-                ("SKIP_INSTALL".into(), "0".into()),
-                (
-                    "VENV_DIR".into(),
-                    ext_dir.join("server/.venv").to_string_lossy().into_owned(),
-                ),
-                (
-                    "SETTINGS_PATH".into(),
-                    ext_dir.join("server/settings.yaml").to_string_lossy().into_owned(),
-                ),
-            ],
+            command: bash,
+            args: vec![launcher.to_string_lossy().into_owned()],
+            env: vec![],
         })
     }
 }

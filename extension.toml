@@ -6,4 +6,8 @@ schema_version = 1
 authors = ["wannebetheshy"]
 repository = "https://github.com/wannebetheshy/realtime-stt-zed"
 
-[context_servers.realtime-stt]
+languages = ["languages/Stt"]
+
+[language_servers.realtime-stt-server]
+name = "Realtime STT Server"
+language = "Stt"
