@@ -1,0 +1,9 @@
+id = "realtime-stt"
+name = "Realtime STT"
+description = "Local speech-to-text server for Zed voice dictation"
+version = "0.0.1"
+schema_version = 1
+authors = ["wannebetheshy"]
+repository = "https://github.com/wannebetheshy/realtime-stt-zed"
+
+[context_servers.realtime-stt]
