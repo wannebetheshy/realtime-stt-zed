@@ -8,10 +8,7 @@ if curl -sf http://127.0.0.1:8765/health > /dev/null 2>&1; then
     echo "[realtime-stt] server already running" >&2
 else
     echo "[realtime-stt] starting server, logs: $LOGFILE" >&2
-    nohup env \
-        VENV_DIR="$VENV_DIR" \
-        SETTINGS_PATH="$SETTINGS_PATH" \
-        bash "${SERVER_DIR}/setup.sh" > "$LOGFILE" 2>&1 &
+    nohup bash -c "cd \"${SERVER_DIR}\" && VENV_DIR=\"${VENV_DIR}\" SETTINGS_PATH=\"${SETTINGS_PATH}\" bash setup.sh" > "$LOGFILE" 2>&1 &
     disown $!
 fi
 
